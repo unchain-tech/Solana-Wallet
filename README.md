@@ -1,3 +1,5 @@
+![](https://i.imgur.com/RYCtLwn.png)
+
 # 👛 Create a Solana Wallet!
 
 このコースを始めるには、下記のステップを実行してください。
