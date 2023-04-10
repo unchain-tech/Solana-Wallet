@@ -1,9 +1,18 @@
+import HeadComponent from "../components/Head";
+import {
+  Keypair,
+  Connection,
+  clusterApiUrl,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import * as Bip39 from "bip39";
-import React, { useState } from "react";
-import { Keypair, Connection, clusterApiUrl, LAMPORTS_PER_SOL, SystemProgram, PublicKey, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
-import HeadComponent from '../components/Head';
+import { useState } from "react";
 
-const NETWORK = 'devnet';
+const NETWORK = "devnet";
 
 export default function Home() {
   const [mnemonic, setMnemonic] = useState(null);
@@ -18,13 +27,13 @@ export default function Home() {
     // ニーモニックフレーズの生成。
     const generatedMnemonic = Bip39.generateMnemonic();
     setMnemonic(generatedMnemonic);
-    console.log('generatedMnemonic', generatedMnemonic);
+    console.log("generatedMnemonic", generatedMnemonic);
 
     const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
-    console.log('seed', seed);
+    console.log("seed", seed);
 
     const newAccount = Keypair.fromSeed(seed);
-    console.log('newAccount', newAccount.publicKey.toString());
+    console.log("newAccount", newAccount.publicKey.toString());
 
     setAccount(newAccount);
   };
@@ -33,7 +42,7 @@ export default function Home() {
     e.preventDefault();
     // フォームに入力されたニーモニックフレーズを取得する。
     const inputMnemonic = e.target[0].value.trim().toLowerCase();
-    console.log('inputMnemonic', inputMnemonic);
+    console.log("inputMnemonic", inputMnemonic);
 
     // ニーモニックフレーズを使用して、シードを生成する。
     const seed = Bip39.mnemonicToSeedSync(inputMnemonic).slice(0, 32);
@@ -41,7 +50,7 @@ export default function Home() {
     // シードを使用して、アカウントを生成する。
     const importedAccount = Keypair.fromSeed(seed);
     setAccount(importedAccount);
-  }
+  };
 
   const refreshBalance = async () => {
     try {
@@ -52,38 +61,41 @@ export default function Home() {
       let balance = await connection.getBalance(publicKey);
       // 残高がlamportで返ってくるため、SOLに変換する(100,000,000lamport = 1SOL)。
       balance = balance / LAMPORTS_PER_SOL;
-      console.log('balance', balance);
+      console.log("balance", balance);
 
       setBalance(balance);
     } catch (error) {
-      console.log('error', error);
+      console.log("error", error);
     }
-  }
+  };
 
   const handleAirdrop = async () => {
     try {
       const connection = new Connection(clusterApiUrl(NETWORK), "confirmed");
       const publicKey = account.publicKey;
 
-      const confirmation = await connection.requestAirdrop(publicKey, LAMPORTS_PER_SOL);
+      const confirmation = await connection.requestAirdrop(
+        publicKey,
+        LAMPORTS_PER_SOL
+      );
       // 確認署名とコミットメントを受け取り、トランザクションがネットワークによって確認されると解決するプロミスを返す。
       await connection.confirmTransaction(confirmation, "confirmed");
       // アカウントの残高を更新する。
       await refreshBalance();
     } catch (error) {
-      console.log('error', error);
+      console.log("error", error);
     }
-  }
+  };
 
   const handleTransfer = async (e) => {
     e.preventDefault();
 
     // 受信者のアドレスを、フォームから取得する。
     const toAddress = e.target[0].value;
-    console.log('toAddress', toAddress);
+    console.log("toAddress", toAddress);
 
     try {
-      console.log('送金中...');
+      console.log("送金中...");
       setTransactionSig("");
 
       const connection = new Connection(clusterApiUrl(NETWORK), "confirmed");
@@ -108,17 +120,17 @@ export default function Home() {
         transaction,
         signers
       );
-      console.log('confirmation', confirmation);
+      console.log("confirmation", confirmation);
 
       setTransactionSig(confirmation);
 
       await refreshBalance();
 
-      console.log('送金が完了しました!!!');
+      console.log("送金が完了しました!!!");
     } catch (error) {
-      console.log('error', error);
+      console.log("error", error);
     }
-  }
+  };
 
   return (
     <div>
@@ -134,12 +146,18 @@ export default function Home() {
         <hr className="my-6" />
 
         <div>
-          <h3 className="p-2 border-dotted border-l-8 border-l-indigo-600">My Wallet</h3>
+          <h3 className="p-2 border-dotted border-l-8 border-l-indigo-600">
+            My Wallet
+          </h3>
           {account && (
             <>
-              <div className="my-6 text-indigo-600 font-bold">アドレス: {account.publicKey.toString()}</div>
+              <div className="my-6 text-indigo-600 font-bold">
+                アドレス: {account.publicKey.toString()}
+              </div>
               <div className="my-6 font-bold">ネットワーク: {NETWORK}</div>
-              {typeof balance === "number" && <div className="my-6 font-bold">💰 残高: {balance} SOL</div>}
+              {typeof balance === "number" && (
+                <div className="my-6 font-bold">💰 残高: {balance} SOL</div>
+              )}
             </>
           )}
         </div>
@@ -147,7 +165,9 @@ export default function Home() {
         <hr className="my-6" />
 
         <div>
-          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">STEP1: ウォレットを新規作成する</h2>
+          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
+            STEP1: ウォレットを新規作成する
+          </h2>
           <button
             className="p-2 my-6 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
             onClick={generateWallet}
@@ -156,9 +176,12 @@ export default function Home() {
           </button>
           {mnemonic && (
             <>
-              <div className="mt-1 p-4 border border-gray-300 bg-gray-200">{mnemonic}</div>
+              <div className="mt-1 p-4 border border-gray-300 bg-gray-200">
+                {mnemonic}
+              </div>
               <strong className="text-xs">
-                このフレーズは秘密にして、安全に保管してください。このフレーズが漏洩すると、誰でもあなたの資産にアクセスできてしまいます。<br />
+                このフレーズは秘密にして、安全に保管してください。このフレーズが漏洩すると、誰でもあなたの資産にアクセスできてしまいます。
+                <br />
                 オンライン銀行口座のパスワードのようなものだと考えてください。
               </strong>
             </>
@@ -168,7 +191,9 @@ export default function Home() {
         <hr className="my-6" />
 
         <div>
-          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">STEP2: 既存のウォレットをインポートする</h2>
+          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
+            STEP2: 既存のウォレットをインポートする
+          </h2>
           <form onSubmit={handleImport} className="my-6">
             <div className="flex items-center border-b border-indigo-500 py-2">
               <input
@@ -188,21 +213,25 @@ export default function Home() {
         <hr className="my-6" />
 
         <div>
-          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">STEP3: 残高を取得する</h2>
-          {account &&
+          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
+            STEP3: 残高を取得する
+          </h2>
+          {account && (
             <button
               className="p-2 my-6 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
               onClick={refreshBalance}
             >
               残高を取得
             </button>
-          }
+          )}
         </div>
 
         <hr className="my-6" />
 
         <div>
-          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">STEP4: エアドロップ機能を実装する</h2>
+          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
+            STEP4: エアドロップ機能を実装する
+          </h2>
           {account && (
             <button
               className="p-2 my-6 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
@@ -216,7 +245,9 @@ export default function Home() {
         <hr className="my-6" />
 
         <div>
-          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">STEP5: 送金機能を実装する</h2>
+          <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
+            STEP5: 送金機能を実装する
+          </h2>
           {account && (
             <>
               <form onSubmit={handleTransfer} className="my-6">
@@ -239,7 +270,8 @@ export default function Home() {
                   <a
                     href={`https://explorer.solana.com/tx/${transactionSig}?cluster=${NETWORK}`}
                     className="border-double border-b-4 border-b-indigo-600"
-                    target='_blank'
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
                     Solana Block Explorer でトランザクションを確認する
                   </a>
@@ -250,5 +282,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
