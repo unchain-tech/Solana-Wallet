@@ -16,15 +16,7 @@ git clone git@github.com:unchain-tech/NEAR-Hotel-Booking-dApp.git
 npm install
 ```
 
-### 3. コントラクトのデプロイ
-
-開発用アカウントにデプロイ
-
-```bash
-yarn deploy
-```
-
-### 4. 開発サーバーの起動
+### 3. 開発サーバーの起動
 
 ```bash
 npm run dev
