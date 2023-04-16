@@ -1,24 +1,28 @@
-import HeadComponent from "../components/Head";
+import * as Bip39 from 'bip39';
 import {
-  Keypair,
-  Connection,
   clusterApiUrl,
+  Connection,
+  Keypair,
   LAMPORTS_PER_SOL,
-  SystemProgram,
   PublicKey,
-  Transaction,
   sendAndConfirmTransaction,
-} from "@solana/web3.js";
-import * as Bip39 from "bip39";
-import { useState } from "react";
+  SystemProgram,
+  Transaction,
+} from '@solana/web3.js';
+import { useState } from 'react';
 
-const NETWORK = "devnet";
+import HeadComponent from '../components/Head';
+
+const NETWORK = 'devnet';
 
 export default function Home() {
   const [mnemonic, setMnemonic] = useState(null);
+  const [recoveryPhrase, setRecoveryPhrase] = useState(null);
   const [account, setAccount] = useState(null);
   const [balance, setBalance] = useState(null);
-  const [transactionSig, setTransactionSig] = useState("");
+  const [transactionSig, setTransactionSig] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toAddress, setToAddress] = useState(null);
 
   /**
    * ニーモニックフレーズとアカウントの生成を行う関数。
@@ -27,13 +31,13 @@ export default function Home() {
     // ニーモニックフレーズの生成。
     const generatedMnemonic = Bip39.generateMnemonic();
     setMnemonic(generatedMnemonic);
-    console.log("generatedMnemonic", generatedMnemonic);
+    console.log('generatedMnemonic', generatedMnemonic);
 
     const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
-    console.log("seed", seed);
+    console.log('seed', seed);
 
-    const newAccount = Keypair.fromSeed(seed);
-    console.log("newAccount", newAccount.publicKey.toString());
+    const newAccount = Keypair.fromSeed(new Uint8Array(seed));
+    console.log('newAccount', newAccount.publicKey.toString());
 
     setAccount(newAccount);
   };
@@ -41,64 +45,65 @@ export default function Home() {
   const handleImport = (e) => {
     e.preventDefault();
     // フォームに入力されたニーモニックフレーズを取得する。
-    const inputMnemonic = e.target[0].value.trim().toLowerCase();
-    console.log("inputMnemonic", inputMnemonic);
+    console.log('recoveryPhrase', recoveryPhrase);
 
     // ニーモニックフレーズを使用して、シードを生成する。
-    const seed = Bip39.mnemonicToSeedSync(inputMnemonic).slice(0, 32);
+    const seed = Bip39.mnemonicToSeedSync(recoveryPhrase).slice(0, 32);
 
     // シードを使用して、アカウントを生成する。
-    const importedAccount = Keypair.fromSeed(seed);
+    const importedAccount = Keypair.fromSeed(new Uint8Array(seed));
     setAccount(importedAccount);
   };
 
   const refreshBalance = async () => {
     try {
       // Connectionインスタンスの生成。
-      const connection = new Connection(clusterApiUrl(NETWORK), "confirmed");
+      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
       const publicKey = account.publicKey;
 
       let balance = await connection.getBalance(publicKey);
       // 残高がlamportで返ってくるため、SOLに変換する(100,000,000lamport = 1SOL)。
       balance = balance / LAMPORTS_PER_SOL;
-      console.log("balance", balance);
+      console.log('balance', balance);
 
       setBalance(balance);
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
     }
   };
 
   const handleAirdrop = async () => {
+    setLoading(true);
     try {
-      const connection = new Connection(clusterApiUrl(NETWORK), "confirmed");
+      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
       const publicKey = account.publicKey;
 
       const confirmation = await connection.requestAirdrop(
         publicKey,
-        LAMPORTS_PER_SOL
+        LAMPORTS_PER_SOL,
       );
       // 確認署名とコミットメントを受け取り、トランザクションがネットワークによって確認されると解決するプロミスを返す。
-      await connection.confirmTransaction(confirmation, "confirmed");
+      await connection.confirmTransaction(confirmation, 'confirmed');
       // アカウントの残高を更新する。
       await refreshBalance();
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleTransfer = async (e) => {
+    setLoading(true);
     e.preventDefault();
 
-    // 受信者のアドレスを、フォームから取得する。
-    const toAddress = e.target[0].value;
-    console.log("toAddress", toAddress);
+    console.log('toAddress', toAddress);
 
     try {
-      console.log("送金中...");
-      setTransactionSig("");
+      console.log('送金中...');
+      setTransactionSig('');
 
-      const connection = new Connection(clusterApiUrl(NETWORK), "confirmed");
+      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
 
       const instructions = SystemProgram.transfer({
         fromPubkey: account.publicKey,
@@ -118,17 +123,19 @@ export default function Home() {
       const confirmation = await sendAndConfirmTransaction(
         connection,
         transaction,
-        signers
+        signers,
       );
-      console.log("confirmation", confirmation);
+      console.log('confirmation', confirmation);
 
       setTransactionSig(confirmation);
 
       await refreshBalance();
 
-      console.log("送金が完了しました!!!");
+      console.log('送金が完了しました!!!');
     } catch (error) {
-      console.log("error", error);
+      console.log('error', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -152,11 +159,16 @@ export default function Home() {
           {account && (
             <>
               <div className="my-6 text-indigo-600 font-bold">
-                アドレス: {account.publicKey.toString()}
+                <span>アドレス: </span>
+                <span data-testid="address">
+                  {account.publicKey.toString()}
+                </span>
               </div>
               <div className="my-6 font-bold">ネットワーク: {NETWORK}</div>
-              {typeof balance === "number" && (
-                <div className="my-6 font-bold">💰 残高: {balance} SOL</div>
+              {typeof balance === 'number' && (
+                <div className="my-6 font-bold" data-testid="balance">
+                  💰 残高: {balance} SOL
+                </div>
               )}
             </>
           )}
@@ -176,7 +188,10 @@ export default function Home() {
           </button>
           {mnemonic && (
             <>
-              <div className="mt-1 p-4 border border-gray-300 bg-gray-200">
+              <div
+                className="mt-1 p-4 border border-gray-300 bg-gray-200"
+                data-testid="mnemonic-display"
+              >
                 {mnemonic}
               </div>
               <strong className="text-xs">
@@ -200,6 +215,7 @@ export default function Home() {
                 type="text"
                 className="w-full text-gray-700 mr-3 p-1 focus:outline-none"
                 placeholder="シークレットリカバリーフレーズ"
+                onChange={(e) => setRecoveryPhrase(e.target.value)}
               />
               <input
                 type="submit"
@@ -232,14 +248,17 @@ export default function Home() {
           <h2 className="p-2 border-dotted border-l-4 border-l-indigo-400">
             STEP4: エアドロップ機能を実装する
           </h2>
-          {account && (
-            <button
-              className="p-2 my-6 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
-              onClick={handleAirdrop}
-            >
-              Airdrop
-            </button>
-          )}
+          {account &&
+            (loading === true ? (
+              <div data-testid="loading-airdrop">処理中...</div>
+            ) : (
+              <button
+                className="p-2 my-6 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
+                onClick={handleAirdrop}
+              >
+                Airdrop
+              </button>
+            ))}
         </div>
 
         <hr className="my-6" />
@@ -256,12 +275,17 @@ export default function Home() {
                     type="text"
                     className="w-full text-gray-700 mr-3 p-1 focus:outline-none"
                     placeholder="送金先のウォレットアドレス"
+                    onChange={(e) => setToAddress(e.target.value)}
                   />
-                  <input
-                    type="submit"
-                    className="p-2 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
-                    value="送金"
-                  />
+                  {loading === true ? (
+                    <div data-testid="loading-transfer">処理中...</div>
+                  ) : (
+                    <input
+                      type="submit"
+                      className="p-2 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
+                      value="送金"
+                    />
+                  )}
                 </div>
               </form>
               {transactionSig && (
