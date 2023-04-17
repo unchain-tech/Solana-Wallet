@@ -42,6 +42,6 @@
     "prettier:check": "prettier --check --ignore-unknown --no-error-on-unmatched-pattern --ignore-path .prettierignore .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "test": "jest --detectOpenHandles"
+    "test": "jest"
   }
 }
