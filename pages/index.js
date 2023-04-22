@@ -80,7 +80,7 @@ export default function Home() {
 
       const confirmation = await connection.requestAirdrop(
         publicKey,
-        LAMPORTS_PER_SOL,
+        2 * LAMPORTS_PER_SOL,
       );
       // 確認署名とコミットメントを受け取り、トランザクションがネットワークによって確認されると解決するプロミスを返す。
       await connection.confirmTransaction(confirmation, 'confirmed');
@@ -97,13 +97,17 @@ export default function Home() {
     setLoading(true);
     e.preventDefault();
 
-    console.log('toAddress', toAddress);
-
     try {
       console.log('送金中...');
       setTransactionSig('');
 
       const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
+
+      console.log('Transfer params:', {
+        fromPubkey: account.publicKey.toString(),
+        toPubkey: toAddress,
+        lamports: LAMPORTS_PER_SOL,
+      });
 
       const instructions = SystemProgram.transfer({
         fromPubkey: account.publicKey,
