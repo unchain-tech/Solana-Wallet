@@ -31,13 +31,13 @@ export default function Home() {
     // ニーモニックフレーズの生成。
     const generatedMnemonic = Bip39.generateMnemonic();
     setMnemonic(generatedMnemonic);
-    console.log('generatedMnemonic', generatedMnemonic);
+    // console.log('generatedMnemonic:', generatedMnemonic);
 
     const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
-    console.log('seed', seed);
+    // console.log('seed:', seed);
 
     const newAccount = Keypair.fromSeed(new Uint8Array(seed));
-    console.log('newAccount', newAccount.publicKey.toString());
+    // console.log('newAccount:', newAccount.publicKey.toString());
 
     setAccount(newAccount);
   };
@@ -45,7 +45,7 @@ export default function Home() {
   const handleImport = (e) => {
     e.preventDefault();
     // フォームに入力されたニーモニックフレーズを取得する。
-    console.log('recoveryPhrase', recoveryPhrase);
+    // console.log('recoveryPhrase:', recoveryPhrase);
 
     // ニーモニックフレーズを使用して、シードを生成する。
     const seed = Bip39.mnemonicToSeedSync(recoveryPhrase).slice(0, 32);
@@ -64,11 +64,11 @@ export default function Home() {
       let balance = await connection.getBalance(publicKey);
       // 残高がlamportで返ってくるため、SOLに変換する(100,000,000lamport = 1SOL)。
       balance = balance / LAMPORTS_PER_SOL;
-      console.log('balance', balance);
+      console.log('balance:', balance);
 
       setBalance(balance);
     } catch (error) {
-      console.log('error', error);
+      console.log('ERROR!', error);
     }
   };
 
@@ -87,7 +87,7 @@ export default function Home() {
       // アカウントの残高を更新する。
       await refreshBalance();
     } catch (error) {
-      console.log('error', error);
+      console.log('ERROR!', error);
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ export default function Home() {
         transaction,
         signers,
       );
-      console.log('confirmation', confirmation);
+      console.log('confirmation:', confirmation);
 
       setTransactionSig(confirmation);
 
@@ -137,7 +137,7 @@ export default function Home() {
 
       console.log('送金が完了しました!!!');
     } catch (error) {
-      console.log('error', error);
+      console.log('ERROR!', error);
     } finally {
       setLoading(false);
     }
