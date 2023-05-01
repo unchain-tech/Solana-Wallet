@@ -9,13 +9,12 @@ import {
   SystemProgram,
   Transaction,
 } from '@solana/web3.js';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import HeadComponent from '../components/Head';
 
-const NETWORK = 'devnet';
-
 export default function Home() {
+  const [network, setNetwork] = useState(undefined);
   const [mnemonic, setMnemonic] = useState(null);
   const [recoveryPhrase, setRecoveryPhrase] = useState(null);
   const [account, setAccount] = useState(null);
@@ -23,6 +22,18 @@ export default function Home() {
   const [transactionSig, setTransactionSig] = useState('');
   const [loading, setLoading] = useState(false);
   const [toAddress, setToAddress] = useState(null);
+
+  useEffect(() => {
+    const NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
+    if (NETWORK === 'localnet') {
+      setNetwork('http://127.0.0.1:8899');
+    } else if (NETWORK === 'devnet') {
+      const network = clusterApiUrl(NETWORK);
+      setNetwork(network);
+    } else {
+      console.error(`Invalid network: ${NETWORK}. Use 'devnet' or 'localnet'.`);
+    }
+  }, [network]);
 
   /**
    * ニーモニックフレーズとアカウントの生成を行う関数。
@@ -58,7 +69,7 @@ export default function Home() {
   const refreshBalance = async () => {
     try {
       // Connectionインスタンスの生成。
-      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
+      const connection = new Connection(network, 'confirmed');
       const publicKey = account.publicKey;
 
       let balance = await connection.getBalance(publicKey);
@@ -75,7 +86,7 @@ export default function Home() {
   const handleAirdrop = async () => {
     setLoading(true);
     try {
-      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
+      const connection = new Connection(network, 'confirmed');
       const publicKey = account.publicKey;
 
       const confirmation = await connection.requestAirdrop(
@@ -101,7 +112,7 @@ export default function Home() {
       console.log('送金中...');
       setTransactionSig('');
 
-      const connection = new Connection(clusterApiUrl(NETWORK), 'confirmed');
+      const connection = new Connection(network, 'confirmed');
 
       console.log('Transfer params:', {
         fromPubkey: account.publicKey.toString(),
@@ -168,7 +179,7 @@ export default function Home() {
                   {account.publicKey.toString()}
                 </span>
               </div>
-              <div className="my-6 font-bold">ネットワーク: {NETWORK}</div>
+              <div className="my-6 font-bold">ネットワーク: {network}</div>
               {typeof balance === 'number' && (
                 <div className="my-6 font-bold" data-testid="balance">
                   💰 残高: {balance} SOL
@@ -296,7 +307,7 @@ export default function Home() {
                 <>
                   <span className="text-red-600">送金が完了しました!</span>
                   <a
-                    href={`https://explorer.solana.com/tx/${transactionSig}?cluster=${NETWORK}`}
+                    href={`https://explorer.solana.com/tx/${transactionSig}?cluster=${network}`}
                     className="border-double border-b-4 border-b-indigo-600"
                     target="_blank"
                     rel="noopener noreferrer"
