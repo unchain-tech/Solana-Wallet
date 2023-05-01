@@ -87,18 +87,39 @@ export default function Home() {
     setLoading(true);
     try {
       const connection = new Connection(network, 'confirmed');
+      console.log('=== 1.');
       const publicKey = account.publicKey;
+      // console.log(`publicKey: ${publicKey}`);
 
-      const confirmation = await connection.requestAirdrop(
+      console.log(`=== 2. `);
+      // await new Promise(r => setTimeout(r, 3000));
+      const signature = await connection.requestAirdrop(
         publicKey,
-        2 * LAMPORTS_PER_SOL,
+        1 * LAMPORTS_PER_SOL,
       );
+      // console.log(`signature: ${signature}`);
+      console.log('=== 3.');
+
+      const latestBlockHash = await connection.getLatestBlockhash();
+
+      console.log(`latestBlockHash ${latestBlockHash}`);
+
       // 確認署名とコミットメントを受け取り、トランザクションがネットワークによって確認されると解決するプロミスを返す。
-      await connection.confirmTransaction(confirmation, 'confirmed');
+
+      await connection.confirmTransaction(
+        {
+          signature,
+          blockhash: latestBlockHash.blockhash,
+          lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        },
+        'confirmed',
+      );
+
+      console.log('=== 4.');
       // アカウントの残高を更新する。
       await refreshBalance();
     } catch (error) {
-      console.log('ERROR!', error);
+      console.log('error', error);
     } finally {
       setLoading(false);
     }
@@ -113,20 +134,19 @@ export default function Home() {
       setTransactionSig('');
 
       const connection = new Connection(network, 'confirmed');
-
-      console.log('Transfer params:', {
-        fromPubkey: account.publicKey.toString(),
-        toPubkey: toAddress,
-        lamports: LAMPORTS_PER_SOL,
-      });
-
-      const instructions = SystemProgram.transfer({
+      const params = {
         fromPubkey: account.publicKey,
-        toPubkey: new PublicKey(toAddress),
-        lamports: LAMPORTS_PER_SOL,
-      });
+        lamports: 0.5 * LAMPORTS_PER_SOL,
+        toPubkey: toAddress,
+      };
 
-      const transaction = new Transaction().add(instructions);
+      // console.log('Transfer params:', params);
+
+      const transaction = new Transaction();
+
+      transaction.add(SystemProgram.transfer(params));
+
+      console.log('===5.');
 
       const signers = [
         {
@@ -140,7 +160,7 @@ export default function Home() {
         transaction,
         signers,
       );
-      console.log('confirmation:', confirmation);
+      // console.log('confirmation', confirmation);
 
       setTransactionSig(confirmation);
 
