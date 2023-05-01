@@ -1,3 +1,10 @@
+import * as Bip39 from 'bip39';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from '@solana/web3.js';
 import {
   render,
   screen,
@@ -5,62 +12,82 @@ import {
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { unmountComponentAtNode } from 'react-dom';
 import { act } from 'react-dom/test-utils';
 
 import Home from '../pages/index';
 
-let container = null;
-let user;
-let generateWalletButton;
-let importButton;
-let recoveryPhrase;
+/**
+ * 実行する機能
+ * 1. ウォレット生成
+ * （生成）
+ *  // Aliceのアドレス
+ *  // Aliceのリカバリーフレーズ
+ * ---
+ * 2. リカバリーフレーズのインポート
+ * (前提)
+ *  // Aliceのリカバリーフレーズ
+ * 3. 残高取得
+ * （前提）
+ *  // Aliceのウォレットがインポートされていること
+ * 4. airdrop
+ * (前提)
+ *  // Aliceのウォレットがインポートされていること
+ * 5. transfer
+ * （前提）
+ *  // Bobのウォレットアドレスがあること
+ *  // AliceがSolを所有していること
+ */
 
-beforeEach(() => {
+const LoadSetup = async () => {
+  // Aliceのアドレス
   /** DOM要素をレンダリングターゲットに設定する */
-  container = document.createElement('div');
+  const container = document.createElement('div');
   document.body.appendChild(container);
 
+  /** テストで使用する変数を定義 */
   act(() => {
     render(<Home />, container);
   });
-  user = userEvent.setup();
-  generateWalletButton = screen.getByText('ウォレットを生成');
-  importButton = screen.getByText('インポート');
-  recoveryPhrase =
-    screen.getByPlaceholderText('シークレットリカバリーフレーズ');
-});
+  const user = userEvent.setup();
+  const generateWalletButton = screen.getByText('ウォレットを生成');
 
-afterEach(() => {
-  /** 終了時のクリーンアップ */
-  unmountComponentAtNode(container);
-  container.remove();
-  container = null;
-});
-
-describe('Home', () => {
-  let mnemonicOfAlice;
-  let addressOfAlice;
-
-  it('generates wallet', async () => {
-    /** 実行 */
-    /** Aliceのウォレットを生成する */
-    await user.click(generateWalletButton);
-
-    /** 検証 */
-    await waitFor(() => {
-      expect(screen.queryByTestId('mnemonic-display')).toBeInTheDocument();
-      expect(screen.queryByTestId('address')).toBeInTheDocument();
-    });
-    mnemonicOfAlice = screen.queryByTestId('mnemonic-display');
-    addressOfAlice = screen.queryByTestId('address');
-    const wordsOfAlice = mnemonicOfAlice.textContent.split(' ');
-    expect(wordsOfAlice.length).toBe(12);
+  // Aliceのウォレットを生成
+  await user.click(generateWalletButton);
+  await waitFor(() => {
+    expect(screen.queryByTestId('mnemonic-display')).toBeInTheDocument();
+    expect(screen.queryByTestId('address')).toBeInTheDocument();
   });
+  const mnemonicOfAlice = screen.queryByTestId('mnemonic-display');
+  const addressOfAlice = screen.queryByTestId('address');
 
-  it('import wallet', async () => {
-    /** 準備 */
-    /** ニーモニックフレーズを入力 */
+  // 12単語のシードフレーズが生成されていることを確認
+  expect(mnemonicOfAlice.textContent.split(' ').length).toBe(12);
+
+  const connectionRpc = await new Connection(
+    'http://127.0.0.1:8899',
+    'confirmed',
+  );
+
+  return {
+    user,
+    mnemonicOfAlice,
+    addressOfAlice,
+    connectionRpc,
+    generateWalletButton,
+  };
+};
+
+describe('Home', function () {
+  it('import wallet', async function () {
+    /** 準備 LoadSetupを呼び出して必要な変数を取ってくる */
+    const { user, addressOfAlice, mnemonicOfAlice } = await LoadSetup();
+
+    const importButton = screen.getByText('インポート');
+    const recoveryPhrase =
+      screen.getByPlaceholderText('シークレットリカバリーフレーズ');
+
+    /** 実行 */
+    // ニーモニックフレーズを入力
     await user.type(recoveryPhrase, mnemonicOfAlice.textContent);
     await user.click(importButton);
     await waitFor(() => {
@@ -68,132 +95,136 @@ describe('Home', () => {
     });
     const importedAddress = screen.queryByTestId('address');
 
+    /** 検証 */
     expect(importedAddress.textContent).toBe(addressOfAlice.textContent);
   });
 
-  describe("Import and use Alice's Wallet", () => {
-    beforeEach(async () => {
-      /** ニーモニックフレーズを入力 */
-      await user.type(recoveryPhrase, mnemonicOfAlice.textContent);
-      /** [ インポート ]ボタンを押して、アドレスを表示させる */
-      await user.click(importButton);
-      await waitFor(() => {
-        expect(screen.queryByTestId('address')).toBeInTheDocument();
-      });
+  it('balance', async function () {
+    /** 準備 */
+    const { user } = await LoadSetup();
 
-      await user.clear(recoveryPhrase);
+    /** 実行 */
+    /** [ 残高を取得 ]ボタンを押す */
+    const getBalanceButton = screen.getByText('残高を取得');
+    await user.click(getBalanceButton);
+    await waitFor(
+      () => {
+        expect(screen.queryByTestId('balance')).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+
+    /** 検証 */
+    const balanceInfo = screen.queryByTestId('balance');
+    expect(balanceInfo.textContent).toBe('💰 残高: 0 SOL');
+  }, 10000);
+
+  it('airdrop', async function () {
+    /** 準備 */
+    const { user, addressOfAlice } = await LoadSetup();
+
+    /** 実行 */
+    /** [ Airdrop ]ボタンを押す */
+    const airdropButton = screen.getByText('Airdrop');
+    await user.click(airdropButton);
+    // /** ローディングインジケータが表示されるまで待機する */
+    await waitFor(() => {
+      expect(screen.getByTestId('loading-airdrop')).toBeInTheDocument();
     });
-
-    it('get balance', async () => {
-      /** 実行 */
-      /** [ 残高を取得 ]ボタンを押す */
-      const getBalanceButton = screen.getByText('残高を取得');
-      await user.click(getBalanceButton);
-      await waitFor(
-        () => {
-          expect(screen.queryByTestId('balance')).toBeInTheDocument();
-        },
-        { timeout: 5000 },
-      );
-
-      /** 検証 */
-      const balanceInfo = screen.queryByTestId('balance');
-      expect(balanceInfo.textContent).toBe('💰 残高: 0 SOL');
+    /** 非同期処理が終わるまで待機する */
+    await waitForElementToBeRemoved(screen.getByTestId('loading-airdrop'), {
+      timeout: 10000,
     });
+    await waitFor(
+      () => {
+        expect(screen.queryByTestId('balance')).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
 
-    it('airdrop', async () => {
-      /** 実行 */
-      /** [ Airdrop ]ボタンを押す */
-      const airdropButton = screen.getByText('Airdrop');
-      await user.click(airdropButton);
-      /** ローディングインジケータが表示されるまで待機する */
-      await waitFor(() => {
-        expect(screen.getByTestId('loading-airdrop')).toBeInTheDocument();
-      });
-      /** 非同期処理が終わるまで待機する */
-      await waitForElementToBeRemoved(screen.getByTestId('loading-airdrop'), {
-        timeout: 10000,
-      });
-      await waitFor(
-        () => {
-          expect(screen.queryByTestId('balance')).toBeInTheDocument();
-        },
-        { timeout: 10000 },
-      );
+    /** 検証 */
+    const balanceInfo = screen.queryByTestId('balance');
+    expect(balanceInfo.textContent).toBe('💰 残高: 1 SOL');
+  }, 20000);
 
-      /** 検証 */
-      const balanceInfo = screen.queryByTestId('balance');
-      expect(balanceInfo.textContent).toBe('💰 残高: 2 SOL');
-    }, 20000);
+  it('transfer', async function () {
+    /** 準備 */
+    const {
+      user,
+      addressOfAlice,
+      mnemonicOfAlice,
+      connectionRpc,
+      generateWalletButton,
+    } = await LoadSetup();
 
-    it('transfer', async () => {
-      /** 準備 */
-      /** Bobのウォレットを生成する */
-      await user.click(generateWalletButton);
-      await waitFor(() => {
-        expect(screen.queryByTestId('mnemonic-display')).toBeInTheDocument();
-        expect(screen.queryByTestId('address')).toBeInTheDocument();
-      });
-      const mnemonicOfBob = screen.queryByTestId('mnemonic-display');
-      const addressOfBob = screen.queryByTestId('address');
+    console.log(connectionRpc.rpcEndpoint);
 
-      console.log(`addressOfAlice.textContent: ${addressOfAlice.textContent}`);
-      console.log(
-        `mnemonicOfAlice.textContent: ${mnemonicOfAlice.textContent}`,
-      );
-      console.log(`addressOfBob.textContent: ${addressOfBob.textContent}`);
-      console.log(`mnemonicOfBob.textContent: ${mnemonicOfBob.textContent}`);
+    const aliceOriginalAddress = addressOfAlice.textContent;
+    const alicePubKey = new PublicKey(addressOfAlice.textContent);
 
-      /** Aliceのウォレットをインポートする */
-      await user.type(recoveryPhrase, mnemonicOfAlice.textContent);
-      await user.click(importButton);
-      await waitFor(() => {
-        expect(screen.queryByTestId('address')).toBeInTheDocument();
-      });
-      const importedAddress = screen.queryByTestId('address');
-      expect(importedAddress.textContent).toBe(addressOfAlice.textContent);
+    // await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      /** [ 残高を取得 ]ボタンを押す */
-      const getBalanceButton = screen.getByText('残高を取得');
-      await user.click(getBalanceButton);
-      await waitFor(
-        () => {
-          expect(screen.queryByTestId('balance')).toBeInTheDocument();
-        },
-        { timeout: 5000 },
-      );
-      const balanceOfAlice = screen.queryByTestId('balance');
-      expect(balanceOfAlice.textContent).toBe('💰 残高: 2 SOL');
+    // let balance = await connectionRpc.getBalance(alicePubKey);
+    // console.log('balance1', balance, aliceOriginalAddress.textContent);
 
-      /** 実行 */
-      /** Aliceが2SOL所有していることを確認したら、Bobに1SOL送金する */
-      const transferButton = screen.getByText('送金');
-      const to = screen.getByPlaceholderText('送金先のウォレットアドレス');
-      /** Bobのウォレットアドレスを入力 */
-      await user.type(to, addressOfBob.textContent);
-      /** [ 送金 ]ボタンを押して、送金を実行 */
-      await user.click(transferButton);
-      /** ローディングインジケータが表示されるまで待機する */
-      await waitFor(() => {
-        expect(screen.queryByTestId('loading-transfer')).toBeInTheDocument();
-      });
-      /** 非同期処理が終わるまで待機する */
-      await waitForElementToBeRemoved(
-        screen.queryByTestId('loading-transfer'),
-        { timeout: 10000 },
-      );
-      await waitFor(
-        () => {
-          expect(
-            screen.queryByTestId('送金が完了しました!'),
-          ).toBeInTheDocument();
-        },
-        { timeout: 10000 },
-      );
+    // console.log(connectionRpc.rpcEndpoint);
 
-      /** 検証 */
-      const balanceOfBob = screen.queryByTestId('balance');
-      expect(balanceOfBob.textContent).toBe('💰 残高: 0.999995 SOL');
-    }, 20000);
-  });
-});
+    // const signature = await connectionRpc.requestAirdrop(
+    //   alicePubKey,
+    //   1 * LAMPORTS_PER_SOL,
+    // );
+    // await connectionRpc.confirmTransaction(signature);
+    // const latestBlockHash = await connectionRpc.getLatestBlockhash();
+
+    // await connectionRpc.confirmTransaction({
+    //   blockhash: latestBlockHash.blockhash,
+    //   lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+    //   signature
+    // })
+    // const signatureStatus = await connectionRpc.getSignatureStatus(signature);
+
+    const balance = await connectionRpc.getBalance(alicePubKey);
+    expect(balance).toBe(1 * LAMPORTS_PER_SOL);
+
+    /** Bobのウォレットアドレスを生成 */
+    const generatedMnemonic = Bip39.generateMnemonic();
+    const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
+    const accountOfBob = Keypair.fromSeed(new Uint8Array(seed));
+    console.log('accountOfBob', accountOfBob, accountOfBob.publicKey);
+
+    /** 実行 */
+    /** Aliceが1SOL所有していることを確認したら、Bobに0.5SOL送金する */
+    const transferButton = screen.getByText('送金');
+    const to = screen.getByPlaceholderText('送金先のウォレットアドレス');
+
+    /** Bobのウォレットアドレスを入力 */
+    await user.type(to, accountOfBob.publicKey.toString());
+
+    /** [ 送金 ]ボタンを押して、送金を実行 */
+    await user.click(transferButton);
+    /** ローディングインジケータが表示されるまで待機する */
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-transfer')).toBeInTheDocument();
+    });
+    /** 非同期処理が終わるまで待機する */
+    await waitForElementToBeRemoved(screen.queryByTestId('loading-transfer'), {
+      timeout: 10000,
+    });
+    await waitFor(
+      () => {
+        expect(screen.queryByTestId('送金が完了しました!')).toBeInTheDocument();
+      },
+      { timeout: 10000 },
+    );
+
+    /** 検証 */
+    const balanceOfAlice = await connectionRpc.getBalance(
+      aliceOriginalAddress.textContent,
+    );
+    expect(balanceOfAlice).toBe(0.499995 * LAMPORTS_PER_SOL);
+
+    // Bobの残金を確認する
+    const balanceOfBob = await connectionRpc.getBalance(accountOfBob.publicKey);
+    expect(balanceOfBob).toBe(0.5 * LAMPORTS_PER_SOL);
+  }, 100000);
+}, 500000);
