@@ -1,4 +1,4 @@
-import * as Bip39 from 'bip39';
+import * as bip39 from 'bip39';
 import { Keypair } from '@solana/web3.js';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -11,8 +11,8 @@ import {
   mockUint8ArraySeed,
 } from '../../__test__/utils';
 
-/** Bip39ライブラリのモック化 */
-jest.mock('Bip39', () => ({
+/** bip39ライブラリのモック化 */
+jest.mock('bip39', () => ({
   mnemonicToSeedSync: jest.fn(),
 }));
 
@@ -30,7 +30,7 @@ describe('ImportWallet', () => {
     /** 準備 */
     const setAccount = jest.fn();
 
-    Bip39.mnemonicToSeedSync.mockImplementation(() => mockSeed);
+    bip39.mnemonicToSeedSync.mockImplementation(() => mockSeed);
 
     jest.spyOn(Keypair, 'fromSeed').mockImplementation(() => mockAccount);
 
@@ -43,7 +43,7 @@ describe('ImportWallet', () => {
     await userEvent.click(btnElement);
 
     /** 確認 */
-    expect(Bip39.mnemonicToSeedSync).toBeCalledWith(mockMnemonic);
+    expect(bip39.mnemonicToSeedSync).toBeCalledWith(mockMnemonic);
     expect(Keypair.fromSeed).toBeCalledWith(mockUint8ArraySeed);
     expect(setAccount).toBeCalledWith(mockAccount);
   });

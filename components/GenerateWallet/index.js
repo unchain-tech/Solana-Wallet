@@ -1,4 +1,4 @@
-import * as Bip39 from 'bip39';
+import * as bip39 from 'bip39';
 import { Keypair } from '@solana/web3.js';
 import { useState } from 'react';
 
@@ -6,9 +6,9 @@ export default function GenerateWallet({ setAccount }) {
   const [mnemonic, setMnemonic] = useState(null);
 
   const generateWallet = () => {
-    const generatedMnemonic = Bip39.generateMnemonic();
+    const generatedMnemonic = bip39.generateMnemonic();
     // ニーモニックフレーズを使用して、シードを生成します。
-    const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
+    const seed = bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
     // シードを使用して、アカウントを生成します。
     const newAccount = Keypair.fromSeed(new Uint8Array(seed));
 

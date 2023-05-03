@@ -1,4 +1,4 @@
-import * as Bip39 from 'bip39';
+import * as bip39 from 'bip39';
 import { Keypair } from '@solana/web3.js';
 import { useState } from 'react';
 
@@ -9,7 +9,7 @@ export default function ImportWallet({ setAccount }) {
     e.preventDefault();
 
     // ニーモニックフレーズを使用して、シードを生成します。
-    const seed = Bip39.mnemonicToSeedSync(recoveryPhrase).slice(0, 32);
+    const seed = bip39.mnemonicToSeedSync(recoveryPhrase).slice(0, 32);
     // シードを使用して、アカウントを生成します。
     const importedAccount = Keypair.fromSeed(new Uint8Array(seed));
 
