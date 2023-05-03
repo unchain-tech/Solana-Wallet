@@ -5,21 +5,14 @@ import { useState } from 'react';
 export default function GenerateWallet({ setAccount }) {
   const [mnemonic, setMnemonic] = useState(null);
 
-  /**
-   * ニーモニックフレーズとアカウントの生成を行う関数。
-   */
   const generateWallet = () => {
-    // ニーモニックフレーズの生成。
     const generatedMnemonic = Bip39.generateMnemonic();
-    setMnemonic(generatedMnemonic);
-    console.log('generatedMnemonic:', generatedMnemonic);
-
+    // ニーモニックフレーズを使用して、シードを生成します。
     const seed = Bip39.mnemonicToSeedSync(generatedMnemonic).slice(0, 32);
-    console.log('seed:', seed);
-
+    // シードを使用して、アカウントを生成します。
     const newAccount = Keypair.fromSeed(new Uint8Array(seed));
-    // console.log('newAccount:', newAccount.publicKey.toString());
 
+    setMnemonic(generatedMnemonic);
     setAccount(newAccount);
   };
 
@@ -33,10 +26,7 @@ export default function GenerateWallet({ setAccount }) {
       </button>
       {mnemonic && (
         <>
-          <div
-            className="mt-1 p-4 border border-gray-300 bg-gray-200"
-            data-testid="mnemonic-display" // TODO: `dta-testid`不要になったら削除
-          >
+          <div className="mt-1 p-4 border border-gray-300 bg-gray-200">
             {mnemonic}
           </div>
           <strong className="text-xs">

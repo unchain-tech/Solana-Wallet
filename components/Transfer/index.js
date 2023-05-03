@@ -12,11 +12,9 @@ export default function TransferFunction({ account, network, refreshBalance }) {
   const [toAddress, setToAddress] = useState(null);
 
   const handleTransfer = async (e) => {
-    // setLoading(true);
     e.preventDefault();
 
     try {
-      console.log('送金中...');
       setTransactionSig('');
 
       const connection = new Connection(network, 'confirmed');
@@ -25,15 +23,6 @@ export default function TransferFunction({ account, network, refreshBalance }) {
         lamports: 0.5 * LAMPORTS_PER_SOL,
         toPubkey: toAddress,
       };
-
-      // console.log('Transfer params:', params);
-
-      const transaction = new Transaction();
-
-      transaction.add(SystemProgram.transfer(params));
-
-      console.log('===5.');
-
       const signers = [
         {
           publicKey: account.publicKey,
@@ -41,22 +30,22 @@ export default function TransferFunction({ account, network, refreshBalance }) {
         },
       ];
 
-      const confirmation = await sendAndConfirmTransaction(
+      // Transactionインスタンスを生成し、`transfer`の指示を追加します。
+      const transaction = new Transaction();
+      transaction.add(SystemProgram.transfer(params));
+      // トランザクションに署名を行い、送信します。
+      const transactionSignature = await sendAndConfirmTransaction(
         connection,
         transaction,
         signers,
       );
-      // console.log('confirmation', confirmation);
 
-      setTransactionSig(confirmation);
+      setTransactionSig(transactionSignature);
 
+      // アカウントの残高を更新します。
       await refreshBalance();
-
-      console.log('送金が完了しました!!!');
     } catch (error) {
       console.log('ERROR!', error);
-      // } finally {
-      //   setLoading(false);
     }
   };
 
@@ -70,15 +59,11 @@ export default function TransferFunction({ account, network, refreshBalance }) {
             placeholder="送金先のウォレットアドレス"
             onChange={(e) => setToAddress(e.target.value)}
           />
-          {/* {loading === true ? (
-            <div data-testid="loading-transfer">処理中...</div>
-          ) : ( */}
           <input
             type="submit"
             className="p-2 text-white bg-indigo-500 focus:ring focus:ring-indigo-300 rounded-lg cursor-pointer"
             value="送金"
           />
-          {/* )} */}
         </div>
       </form>
       {transactionSig && (

@@ -7,14 +7,12 @@ export default function ImportWallet({ setAccount }) {
 
   const handleImport = (e) => {
     e.preventDefault();
-    // フォームに入力されたニーモニックフレーズを取得する。
-    console.log('recoveryPhrase:', recoveryPhrase);
 
-    // ニーモニックフレーズを使用して、シードを生成する。
+    // ニーモニックフレーズを使用して、シードを生成します。
     const seed = Bip39.mnemonicToSeedSync(recoveryPhrase).slice(0, 32);
-
-    // シードを使用して、アカウントを生成する。
+    // シードを使用して、アカウントを生成します。
     const importedAccount = Keypair.fromSeed(new Uint8Array(seed));
+
     setAccount(importedAccount);
   };
 

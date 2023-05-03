@@ -9,32 +9,32 @@ import ImportWallet from '../components/ImportWallet';
 import Transfer from '../components/Transfer';
 
 export default function Home() {
-  const [network, setNetwork] = useState(undefined);
+  const [network, setNetwork] = useState(null);
   const [account, setAccount] = useState(null);
   const [balance, setBalance] = useState(null);
 
   useEffect(() => {
+    // Connectionインスタンスを生成する際に使用する、接続先のURLを取得します。
+    // 現在の実装では、'devnet'のみをサポートしています。
     const NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
-    if (NETWORK === 'localnet') {
-      setNetwork('http://127.0.0.1:8899');
-    } else if (NETWORK === 'devnet') {
+    if (NETWORK === 'devnet') {
       const network = clusterApiUrl(NETWORK);
       setNetwork(network);
     } else {
-      console.error(`Invalid network: ${NETWORK}. Use 'devnet' or 'localnet'.`);
+      console.error(`Invalid network: ${NETWORK}. Use 'devnet'.`);
     }
-  }, [network]);
+  }, []);
 
   const refreshBalance = async () => {
     try {
-      // Connectionインスタンスの生成。
+      // Connectionインスタンスを生成します。
       const connection = new Connection(network, 'confirmed');
       const publicKey = account.publicKey;
 
       let balance = await connection.getBalance(publicKey);
-      // 残高がlamportで返ってくるため、SOLに変換する(100,000,000lamport = 1SOL)。
+      // 残高がlamportで返ってくるため、SOLに変換します。
+      // 100,000,000lamport = 1SOL
       balance = balance / LAMPORTS_PER_SOL;
-      console.log('balance:', balance);
 
       setBalance(balance);
     } catch (error) {
@@ -63,15 +63,11 @@ export default function Home() {
             <>
               <div className="my-6 text-indigo-600 font-bold">
                 <span>アドレス: </span>
-                <span data-testid="address">
-                  {account.publicKey.toString()}
-                </span>
+                {account.publicKey.toString()}
               </div>
               <div className="my-6 font-bold">ネットワーク: {network}</div>
               {typeof balance === 'number' && (
-                <div className="my-6 font-bold" data-testid="balance">
-                  💰 残高: {balance} SOL
-                </div>
+                <div className="my-6 font-bold">💰 残高: {balance} SOL</div>
               )}
             </>
           )}
