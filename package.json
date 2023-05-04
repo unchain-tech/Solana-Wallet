@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.39.1",
+    "@solana/web3.js": "1.75.0",
     "next": "12.1.5",
     "react": "18.0.0",
     "react-dom": "18.0.0"
