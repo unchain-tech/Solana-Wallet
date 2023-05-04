@@ -5,13 +5,12 @@ import userEvent from '@testing-library/user-event';
 
 import ImportWallet from '.';
 import {
-  mockAccount,
-  mockMnemonic,
-  mockSeed,
-  mockUint8ArraySeed,
+  dummyAccount,
+  dummyMnemonic,
+  dummySeed,
+  dummyUint8ArraySeed,
 } from '../../__test__/utils';
 
-/** bip39ライブラリのモック化 */
 jest.mock('bip39', () => ({
   mnemonicToSeedSync: jest.fn(),
 }));
@@ -26,25 +25,24 @@ describe('ImportWallet', () => {
     expect(formElement).toBeInTheDocument();
     expect(btnElement).toBeInTheDocument();
   });
-  it('should be able to import wallet from mnemonic phrase', async () => {
+  it('should implement import wallet flow', async () => {
     /** 準備 */
-    const setAccount = jest.fn();
+    const mockedSetAccount = jest.fn();
+    /** 関数の戻り値にダミーの値を設定する */
+    bip39.mnemonicToSeedSync.mockImplementation(() => dummySeed);
+    jest.spyOn(Keypair, 'fromSeed').mockImplementation(() => dummyAccount);
 
-    bip39.mnemonicToSeedSync.mockImplementation(() => mockSeed);
-
-    jest.spyOn(Keypair, 'fromSeed').mockImplementation(() => mockAccount);
-
-    render(<ImportWallet setAccount={setAccount} />);
+    render(<ImportWallet setAccount={mockedSetAccount} />);
     const formElement = screen.getByRole('textbox');
     const btnElement = screen.getByRole('button', { name: /インポート/i });
 
     /** 実行 */
-    await userEvent.type(formElement, mockMnemonic);
+    await userEvent.type(formElement, dummyMnemonic);
     await userEvent.click(btnElement);
 
     /** 確認 */
-    expect(bip39.mnemonicToSeedSync).toBeCalledWith(mockMnemonic);
-    expect(Keypair.fromSeed).toBeCalledWith(mockUint8ArraySeed);
-    expect(setAccount).toBeCalledWith(mockAccount);
+    expect(bip39.mnemonicToSeedSync).toBeCalledWith(dummyMnemonic);
+    expect(Keypair.fromSeed).toBeCalledWith(dummyUint8ArraySeed);
+    expect(mockedSetAccount).toBeCalledWith(dummyAccount);
   });
 });

@@ -7,15 +7,16 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Transfer from '.';
+import { dummyAccount, dummyNetwork } from '../../__test__/utils';
 
-// TODO: mock化の共通化を検討する
 jest.mock('@solana/web3.js', () => ({
+  ...jest.requireActual('@solana/web3.js'),
   Connection: jest.fn(),
   sendAndConfirmTransaction: jest.fn(),
-  Transaction: jest.fn(),
   SystemProgram: {
     transfer: jest.fn(),
   },
+  Transaction: jest.fn(),
 }));
 
 describe('Transfer', () => {
@@ -28,21 +29,23 @@ describe('Transfer', () => {
     expect(formElement).toBeInTheDocument();
     expect(btnElement).toBeInTheDocument();
   });
-  it('should be able to transfer', async () => {
+  it('should implement transfer flow', async () => {
     /** 準備 */
-    const mockTransaction = {
+    const mockedRefreshBalance = jest.fn();
+    /** Transactionクラスをモックする */
+    const mockedTransaction = {
       add: jest.fn(),
     };
-    const refreshBalance = jest.fn();
-    Transaction.mockImplementation(() => mockTransaction);
-    SystemProgram.transfer.mockReturnValue('mockInstruction');
+    Transaction.mockImplementation(() => mockedTransaction);
+    /** 関数の戻り値にダミーの値を設定する */
     sendAndConfirmTransaction.mockResolvedValue('mockSignature');
+    SystemProgram.transfer.mockReturnValue('mockInstruction');
 
     render(
       <Transfer
-        account={{ publicKey: 'mockPublicKey', secretKey: 'mockSecretKey' }}
-        network="mockNetwork"
-        refreshBalance={refreshBalance}
+        account={dummyAccount}
+        network={dummyNetwork}
+        refreshBalance={mockedRefreshBalance}
       />,
     );
     const formElement = screen.getByRole('textbox');
@@ -55,16 +58,21 @@ describe('Transfer', () => {
     /** 確認 */
     const linkElement = screen.getByRole('link');
 
-    expect(mockTransaction.add).toBeCalledWith('mockInstruction');
+    expect(mockedTransaction.add).toBeCalledWith('mockInstruction');
     expect(sendAndConfirmTransaction).toBeCalledWith(
       expect.anything(),
-      mockTransaction,
-      [{ publicKey: 'mockPublicKey', secretKey: 'mockSecretKey' }],
+      mockedTransaction,
+      [
+        {
+          publicKey: dummyAccount.publicKey,
+          secretKey: dummyAccount.secretKey,
+        },
+      ],
     );
-    expect(refreshBalance).toBeCalled();
+    expect(mockedRefreshBalance).toBeCalled();
     expect(linkElement).toHaveAttribute(
       'href',
-      `https://explorer.solana.com/tx/mockSignature?cluster=mockNetwork`,
+      `https://explorer.solana.com/tx/mockSignature?cluster=${dummyNetwork}`,
     );
   });
 });

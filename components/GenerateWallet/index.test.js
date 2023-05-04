@@ -5,13 +5,12 @@ import userEvent from '@testing-library/user-event/';
 
 import GenerateWallet from '.';
 import {
-  mockAccount,
-  mockMnemonic,
-  mockSeed,
-  mockUint8ArraySeed,
+  dummyAccount,
+  dummyMnemonic,
+  dummySeed,
+  dummyUint8ArraySeed,
 } from '../../__test__/utils';
 
-/** bip39ライブラリのモック化 */
 jest.mock('bip39', () => ({
   generateMnemonic: jest.fn(),
   mnemonicToSeedSync: jest.fn(),
@@ -26,17 +25,15 @@ describe('GenerateWallet', () => {
     expect(btnElement).toBeInTheDocument();
   });
 
-  it('should generates a new wallet on button click', async () => {
+  it('should implement generate wallet flow', async () => {
     /** 準備 */
-    const setAccount = jest.fn();
+    const mockedSetAccount = jest.fn();
+    /** 関数の戻り値にダミーの値を設定する */
+    bip39.generateMnemonic.mockImplementation(() => dummyMnemonic);
+    bip39.mnemonicToSeedSync.mockImplementation(() => dummySeed);
+    jest.spyOn(Keypair, 'fromSeed').mockImplementation(() => dummyAccount);
 
-    bip39.generateMnemonic.mockImplementation(() => mockMnemonic);
-    bip39.mnemonicToSeedSync.mockImplementation(() => mockSeed);
-
-    /** Keypair.fromSeed()をモック化する */
-    jest.spyOn(Keypair, 'fromSeed').mockImplementation(() => mockAccount);
-
-    render(<GenerateWallet setAccount={setAccount} />);
+    render(<GenerateWallet setAccount={mockedSetAccount} />);
     const btnElement = screen.getByRole('button', {
       name: /ウォレットを生成/i,
     });
@@ -46,7 +43,7 @@ describe('GenerateWallet', () => {
 
     /** 確認 */
     expect(bip39.generateMnemonic).toBeCalled();
-    expect(await screen.findByText(mockMnemonic)).toBeInTheDocument();
-    expect(Keypair.fromSeed).toBeCalledWith(mockUint8ArraySeed);
+    expect(await screen.findByText(dummyMnemonic)).toBeInTheDocument();
+    expect(Keypair.fromSeed).toBeCalledWith(dummyUint8ArraySeed);
   });
 });

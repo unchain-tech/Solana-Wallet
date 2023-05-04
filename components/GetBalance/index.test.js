@@ -11,17 +11,17 @@ describe('GetBalance', () => {
 
     expect(btnElement).toBeInTheDocument();
   });
-  it('should be able to get balance', async () => {
+  it('should implement get balance flow', async () => {
     /** 準備 */
-    const refreshBalance = jest.fn();
+    const mockedRefreshBalance = jest.fn();
 
-    render(<GetBalance refreshBalance={refreshBalance} />);
+    render(<GetBalance refreshBalance={mockedRefreshBalance} />);
     const btnElement = screen.getByRole('button', { name: /残高を取得/i });
 
     /** 実行 */
     await userEvent.click(btnElement);
 
     /** 確認 */
-    expect(refreshBalance).toBeCalled();
+    expect(mockedRefreshBalance).toBeCalled();
   });
 });

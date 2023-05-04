@@ -3,12 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Airdrop from '.';
+import { dummyAccount, dummyNetwork } from '../../__test__/utils';
 
-// TODO: mock化の共通化を検討する
 jest.mock('@solana/web3.js', () => ({
+  ...jest.requireActual('@solana/web3.js'),
   Connection: jest.fn(),
-  confirmTransaction: jest.fn(),
-  LAMPORTS_PER_SOL: 1000000000,
 }));
 
 describe('Airdrop', () => {
@@ -20,28 +19,28 @@ describe('Airdrop', () => {
     expect(btnElement).toBeInTheDocument();
   });
 
-  it('should be able to airdrop', async () => {
+  it('should implement airdrop flow', async () => {
     /** 準備 */
-    const mockRequestAirdrop = jest.fn(() => Promise.resolve('signature'));
-    const mockGetLatestBlockhash = jest.fn(() =>
+    const mockedRefreshBalance = jest.fn();
+    /** Connectionクラスをモックする */
+    const mockedRequestAirdrop = jest.fn(() => Promise.resolve('signature'));
+    const mockedGetLatestBlockhash = jest.fn(() =>
       Promise.resolve({ blockhash: 'blockhash', lastValidBlockHeight: 1 }),
     );
-    const mockConfirmTransaction = jest.fn(() =>
+    const mockedConfirmTransaction = jest.fn(() =>
       Promise.resolve({ value: true }),
     );
-    const refreshBalance = jest.fn();
-
     Connection.mockImplementation(() => ({
-      requestAirdrop: mockRequestAirdrop,
-      getLatestBlockhash: mockGetLatestBlockhash,
-      confirmTransaction: mockConfirmTransaction,
+      requestAirdrop: mockedRequestAirdrop,
+      getLatestBlockhash: mockedGetLatestBlockhash,
+      confirmTransaction: mockedConfirmTransaction,
     }));
 
     render(
       <Airdrop
-        account={{ publicKey: 'mockPublicKey' }}
-        network=""
-        refreshBalance={refreshBalance}
+        account={dummyAccount}
+        network={dummyNetwork}
+        refreshBalance={mockedRefreshBalance}
       />,
     );
     const btnElement = screen.getByRole('button', { name: /Airdrop/i });
@@ -50,11 +49,11 @@ describe('Airdrop', () => {
     await userEvent.click(btnElement);
 
     /** 確認 */
-    expect(mockRequestAirdrop).toBeCalledWith(
-      'mockPublicKey',
+    expect(mockedRequestAirdrop).toBeCalledWith(
+      dummyAccount.publicKey,
       LAMPORTS_PER_SOL,
     );
-    expect(mockConfirmTransaction).toBeCalledWith(
+    expect(mockedConfirmTransaction).toBeCalledWith(
       {
         signature: 'signature',
         blockhash: 'blockhash',
@@ -62,6 +61,6 @@ describe('Airdrop', () => {
       },
       expect.anything(),
     );
-    expect(refreshBalance).toBeCalled();
+    expect(mockedRefreshBalance).toBeCalled();
   });
 });
