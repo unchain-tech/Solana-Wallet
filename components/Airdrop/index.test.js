@@ -22,13 +22,24 @@ describe('Airdrop', () => {
   it('should implement airdrop flow', async () => {
     /** 準備 */
     const mockedRefreshBalance = jest.fn();
+
     /** Connectionクラスをモックする */
     const mockedRequestAirdrop = jest.fn(() => Promise.resolve('signature'));
     const mockedGetLatestBlockhash = jest.fn(() =>
       Promise.resolve({ blockhash: 'blockhash', lastValidBlockHeight: 1 }),
     );
+    /** confirmTransaction関数が成功した場合の戻り値を定義する */
+    const dummySignatureResult = {
+      err: null,
+    };
+    const dummyRpcResponseAndContext = {
+      context: {
+        slot: 12345,
+      },
+      value: dummySignatureResult,
+    };
     const mockedConfirmTransaction = jest.fn(() =>
-      Promise.resolve({ value: true }),
+      Promise.resolve(dummyRpcResponseAndContext),
     );
     Connection.mockImplementation(() => ({
       requestAirdrop: mockedRequestAirdrop,

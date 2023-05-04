@@ -11,14 +11,21 @@ export default function Airdrop({ account, network, refreshBalance }) {
       );
 
       const latestBlockHash = await connection.getLatestBlockhash();
-      await connection.confirmTransaction(
-        {
-          signature,
-          blockhash: latestBlockHash.blockhash,
-          lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        },
-        'confirmed',
-      );
+      await connection
+        .confirmTransaction(
+          {
+            signature,
+            blockhash: latestBlockHash.blockhash,
+            lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+          },
+          'confirmed',
+        )
+        .then((response) => {
+          const signatureResult = response.value;
+          if (signatureResult.err) {
+            console.error('Transaction failed: ', signatureResult.err);
+          }
+        });
 
       // アカウントの残高を更新します。
       await refreshBalance();
