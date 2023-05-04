@@ -7,7 +7,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Transfer from '.';
-import { dummyAccount, dummyNetwork } from '../../__test__/utils';
+import { dummyAccount, dummyNetwork } from '../../test/utils';
 
 jest.mock('@solana/web3.js', () => ({
   ...jest.requireActual('@solana/web3.js'),

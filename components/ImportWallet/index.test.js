@@ -9,7 +9,7 @@ import {
   dummyMnemonic,
   dummySeed,
   dummyUint8ArraySeed,
-} from '../../__test__/utils';
+} from '../../test/utils';
 
 jest.mock('bip39', () => ({
   mnemonicToSeedSync: jest.fn(),
