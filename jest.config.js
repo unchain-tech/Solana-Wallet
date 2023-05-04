@@ -1,5 +1,3 @@
-require('dotenv').config({ path: '.env.test.local' });
-
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({ dir: './' });
