@@ -8,6 +8,8 @@ import HeadComponent from '../components/Head';
 import ImportWallet from '../components/ImportWallet';
 import Transfer from '../components/Transfer';
 
+const NETWORK = 'devnet';
+
 export default function Home() {
   const [network, setNetwork] = useState(null);
   const [account, setAccount] = useState(null);
@@ -16,7 +18,6 @@ export default function Home() {
   useEffect(() => {
     // Connectionインスタンスを生成する際に使用する、接続先のURLを取得します。
     // 現在の実装では、'devnet'のみをサポートしています。
-    const NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK;
     if (NETWORK === 'devnet') {
       const network = clusterApiUrl(NETWORK);
       setNetwork(network);
