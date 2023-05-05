@@ -30,7 +30,7 @@ export default function Airdrop({ account, network, refreshBalance }) {
       // アカウントの残高を更新します。
       await refreshBalance();
     } catch (error) {
-      console.log('error', error);
+      console.error(error);
     }
   };
   return (

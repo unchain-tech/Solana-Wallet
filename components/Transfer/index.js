@@ -45,7 +45,7 @@ export default function TransferFunction({ account, network, refreshBalance }) {
       // アカウントの残高を更新します。
       await refreshBalance();
     } catch (error) {
-      console.log('ERROR!', error);
+      console.error(error);
     }
   };
 

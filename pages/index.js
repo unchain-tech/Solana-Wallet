@@ -39,7 +39,7 @@ export default function Home() {
 
       setBalance(balance);
     } catch (error) {
-      console.log('ERROR!', error);
+      console.error(error);
     }
   };
 
