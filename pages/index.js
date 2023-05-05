@@ -30,9 +30,8 @@ export default function Home() {
     try {
       // Connectionインスタンスを生成します。
       const connection = new Connection(network, 'confirmed');
-      const publicKey = account.publicKey;
 
-      let balance = await connection.getBalance(publicKey);
+      let balance = await connection.getBalance(account.publicKey);
       // 残高がlamportで返ってくるため、SOLに変換します。
       // 100,000,000lamport = 1SOL
       balance = balance / LAMPORTS_PER_SOL;
