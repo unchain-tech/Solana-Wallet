@@ -11,6 +11,7 @@ describe('GetBalance', () => {
 
     expect(btnElement).toBeInTheDocument();
   });
+
   it('should implement get balance flow', async () => {
     /** 準備 */
     const mockedRefreshBalance = jest.fn();
