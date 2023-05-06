@@ -25,6 +25,7 @@ describe('ImportWallet', () => {
     expect(formElement).toBeInTheDocument();
     expect(btnElement).toBeInTheDocument();
   });
+
   it('should implement import wallet flow', async () => {
     /** 準備 */
     const mockedSetAccount = jest.fn();

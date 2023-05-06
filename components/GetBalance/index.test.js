@@ -5,12 +5,13 @@ import GetBalance from '.';
 
 describe('GetBalance', () => {
   it('should exist get balance button', () => {
-    render(<GetBalance refreshBalance={() => {}} />);
+    render(<GetBalance refreshBalance={() => { }} />);
 
     const btnElement = screen.getByRole('button', { name: /残高を取得/i });
 
     expect(btnElement).toBeInTheDocument();
   });
+
   it('should implement get balance flow', async () => {
     /** 準備 */
     const mockedRefreshBalance = jest.fn();

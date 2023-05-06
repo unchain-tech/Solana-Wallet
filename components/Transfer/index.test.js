@@ -21,7 +21,7 @@ jest.mock('@solana/web3.js', () => ({
 
 describe('Transfer', () => {
   it('should exist transfer button', () => {
-    render(<Transfer account={{}} network="" refreshBalance={() => {}} />);
+    render(<Transfer account={{}} network="" refreshBalance={() => { }} />);
 
     const formElement = screen.getByRole('textbox');
     const btnElement = screen.getByRole('button', { name: /送金/i });
@@ -29,6 +29,7 @@ describe('Transfer', () => {
     expect(formElement).toBeInTheDocument();
     expect(btnElement).toBeInTheDocument();
   });
+
   it('should implement transfer flow', async () => {
     /** 準備 */
     const mockedRefreshBalance = jest.fn();
