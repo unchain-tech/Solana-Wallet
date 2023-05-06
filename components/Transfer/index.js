@@ -7,7 +7,7 @@ import {
 } from '@solana/web3.js';
 import { useState } from 'react';
 
-export default function TransferFunction({ account, network, refreshBalance }) {
+export default function Transfer({ account, network, refreshBalance }) {
   const [transactionSig, setTransactionSig] = useState('');
   const [toAddress, setToAddress] = useState(null);
 
