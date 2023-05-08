@@ -4,9 +4,8 @@ export default function Airdrop({ account, network, refreshBalance }) {
   const handleAirdrop = async () => {
     try {
       const connection = new Connection(network, 'confirmed');
-      const publicKey = account.publicKey;
       const signature = await connection.requestAirdrop(
-        publicKey,
+        account.publicKey,
         1 * LAMPORTS_PER_SOL,
       );
 
@@ -30,7 +29,7 @@ export default function Airdrop({ account, network, refreshBalance }) {
       // アカウントの残高を更新します。
       await refreshBalance();
     } catch (error) {
-      console.log('error', error);
+      console.error(error);
     }
   };
   return (

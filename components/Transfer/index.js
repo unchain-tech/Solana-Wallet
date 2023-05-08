@@ -7,7 +7,7 @@ import {
 } from '@solana/web3.js';
 import { useState } from 'react';
 
-export default function TransferFunction({ account, network, refreshBalance }) {
+export default function Transfer({ account, network, refreshBalance }) {
   const [transactionSig, setTransactionSig] = useState('');
   const [toAddress, setToAddress] = useState(null);
 
@@ -45,7 +45,7 @@ export default function TransferFunction({ account, network, refreshBalance }) {
       // アカウントの残高を更新します。
       await refreshBalance();
     } catch (error) {
-      console.log('ERROR!', error);
+      console.error(error);
     }
   };
 

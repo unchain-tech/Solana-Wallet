@@ -29,6 +29,7 @@ describe('Transfer', () => {
     expect(formElement).toBeInTheDocument();
     expect(btnElement).toBeInTheDocument();
   });
+
   it('should implement transfer flow', async () => {
     /** 準備 */
     const mockedRefreshBalance = jest.fn();
